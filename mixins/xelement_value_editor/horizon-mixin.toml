@@ -1,0 +1,34 @@
+[mod]
+id = "xelement_value_editor"
+version = "0.1.0"
+priority = 100
+
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "xelement_value_editor"
+source = "runtime.rs"
+
+[[injection]]
+id = "insert-toggle"
+target = "horizon_client::game::Game<'_>::key_pressed"
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "winit::keyboard::KeyCode", value = "key" },
+  { name = "raw", ty = "winit::keyboard::KeyCode", value = "raw" }
+]
+
+[[injection]]
+id = "draw-overlay"
+target = "horizon_client::game::Game<'_>::hud"
+kind = "RETURN"
+helper = "hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "horizon_client::hud::HudBatch", value = "$value" }
+]
