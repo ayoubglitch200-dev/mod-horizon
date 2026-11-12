@@ -39,7 +39,7 @@ id = "mouse-category-click"
 target = "horizon_client::game::Game<'_>::handle_window_event_inner"
 kind = "HEAD"
 cancellable = true
-helper = "key.rs"
+helper = "mouse.rs"
 bindings = [
   { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
   { name = "event", ty = "&winit::event::WindowEvent", value = "&event" }
