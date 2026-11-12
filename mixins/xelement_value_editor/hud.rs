@@ -36,5 +36,16 @@ fn draw_overlay(
         batch.text(atlas, text, 26.0, y, horizon_client::hud::rgba(r, g, b, 255), true);
     }
 
+    // Highlight the currently selected category.
+    let selected_y = [50.0, 88.0, 126.0, 164.0][editor::selected_index()];
+    batch.text(
+        atlas,
+        ">",
+        17.0,
+        selected_y,
+        horizon_client::hud::rgba(255, 220, 80, 255),
+        true,
+    );
+
     batch
 }
