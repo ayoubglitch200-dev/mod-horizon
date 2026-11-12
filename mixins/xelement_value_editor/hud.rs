@@ -4,7 +4,8 @@ fn draw_overlay(
 ) -> HudBatch {
     use crate::game::xelement_value_editor as editor;
 
-    if game.remote.is_some() || !editor::menu_is_open() {
+    // The integrated server exists in single-player; remote is also Some there.
+    if game.integrated.is_none() || !editor::menu_is_open() {
         return batch;
     }
 
