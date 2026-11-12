@@ -30,5 +30,5 @@ kind = "RETURN"
 helper = "hud.rs"
 bindings = [
   { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
-  { name = "batch", ty = "horizon_client::hud::HudBatch", value = "$value" }
+  { name = "batch", ty = "HudBatch", value = "$value" }
 ]
