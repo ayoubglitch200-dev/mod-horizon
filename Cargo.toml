@@ -1,0 +1,10 @@
+[package]
+name = "xelement-value-editor"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+description = "Single-player value editor overlay prototype for Horizon"
+
+[lib]
+path = "mixins/xelement_value_editor/runtime.rs"
