@@ -6,18 +6,12 @@ fn toggle_insert(
     use core::ops::ControlFlow;
     use winit::keyboard::KeyCode;
 
-    // The editor is intentionally limited to a local integrated-server world.
+    // Only run in a local single-player world.
     if game.integrated.is_none() {
         return ControlFlow::Continue(());
     }
 
-    let pressed = if key == KeyCode::Unidentified(winit::keyboard::NativeKeyCode::Unidentified) {
-        raw
-    } else {
-        key
-    };
-
-    if pressed == KeyCode::Insert || raw == KeyCode::Insert {
+    if key == KeyCode::Insert || raw == KeyCode::Insert {
         crate::game::xelement_value_editor::toggle_menu();
         return ControlFlow::Break(Ok(()));
     }
@@ -27,16 +21,28 @@ fn toggle_insert(
     }
 
     use crate::game::xelement_value_editor as editor;
-    match pressed {
-        KeyCode::ArrowDown | KeyCode::KeyS => editor::select_next(),
-        KeyCode::ArrowUp | KeyCode::KeyW => editor::select_previous(),
-        KeyCode::Escape => editor::close_menu(),
-        // Prevent normal gameplay movement while the editor is open.
-        KeyCode::ArrowLeft | KeyCode::ArrowRight
-        | KeyCode::KeyA | KeyCode::KeyD
-        | KeyCode::Space | KeyCode::Enter => {},
-        _ => return ControlFlow::Continue(()),
+    let pressed = key;
+    let raw_pressed = raw;
+
+    if pressed == KeyCode::ArrowDown || raw_pressed == KeyCode::ArrowDown
+        || pressed == KeyCode::KeyS || raw_pressed == KeyCode::KeyS {
+        editor::select_next();
+    } else if pressed == KeyCode::ArrowUp || raw_pressed == KeyCode::ArrowUp
+        || pressed == KeyCode::KeyW || raw_pressed == KeyCode::KeyW {
+        editor::select_previous();
+    } else if pressed == KeyCode::Escape || raw_pressed == KeyCode::Escape {
+        editor::close_menu();
+    } else if pressed == KeyCode::ArrowLeft || raw_pressed == KeyCode::ArrowLeft
+        || pressed == KeyCode::ArrowRight || raw_pressed == KeyCode::ArrowRight
+        || pressed == KeyCode::KeyA || raw_pressed == KeyCode::KeyA
+        || pressed == KeyCode::KeyD || raw_pressed == KeyCode::KeyD
+        || pressed == KeyCode::Space || raw_pressed == KeyCode::Space
+        || pressed == KeyCode::Enter || raw_pressed == KeyCode::Enter {
+        // These keys belong to the editor while it is open, not to gameplay.
+    } else {
+        return ControlFlow::Continue(());
     }
 
+    // Skip Game::key_pressed so movement and other gameplay actions don't run.
     ControlFlow::Break(Ok(()))
 }
