@@ -16,6 +16,7 @@ source = "runtime.rs"
 id = "insert-toggle"
 target = "horizon_client::game::Game<'_>::key_pressed"
 kind = "HEAD"
+cancellable = true
 helper = "key.rs"
 bindings = [
   { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
