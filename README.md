@@ -1,11 +1,15 @@
 # XElement Value Editor
 
+Version: **0.2.0**
+
 Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca (short: fdc87ae).
 
 ## Current prototype
 
 - Press Insert in a local single-player world to show or hide the overlay.
 - The overlay is drawn into the game's HUD.
+- The mouse cursor is released while the overlay is open; click one of the four category rows to select it.
+- Mouse clicks are blocked from reaching the world while the overlay is open. Press Insert or Escape to close it and recapture the mouse.
 - The solo check uses Horizon's integrated server field. A single-player client also has a remote connection to its integrated server, so checking remote.is_some() incorrectly disables the mod.
 - The overlay currently lists planned editor categories; it does not yet write gameplay values.
 
