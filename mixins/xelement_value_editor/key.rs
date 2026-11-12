@@ -13,6 +13,8 @@ fn toggle_insert(
 
     if key == KeyCode::Insert || raw == KeyCode::Insert {
         crate::game::xelement_value_editor::toggle_menu();
+        // Show the system cursor while the overlay is open; recapture it when closed.
+        game.capture(!crate::game::xelement_value_editor::menu_is_open());
         return ControlFlow::Break(Ok(()));
     }
 
@@ -32,6 +34,7 @@ fn toggle_insert(
         editor::select_previous();
     } else if pressed == KeyCode::Escape || raw_pressed == KeyCode::Escape {
         editor::close_menu();
+        game.capture(true);
     } else if pressed == KeyCode::ArrowLeft || raw_pressed == KeyCode::ArrowLeft
         || pressed == KeyCode::ArrowRight || raw_pressed == KeyCode::ArrowRight
         || pressed == KeyCode::KeyA || raw_pressed == KeyCode::KeyA
