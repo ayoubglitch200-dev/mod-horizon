@@ -1,6 +1,6 @@
 [mod]
 id = "xelement_value_editor"
-version = "0.2.0"
+version = "0.1.1"
 priority = 100
 
 [compatibility]
@@ -34,13 +34,3 @@ bindings = [
   { name = "batch", ty = "HudBatch", value = "$value" }
 ]
 
-[[injection]]
-id = "mouse-category-click"
-target = "horizon_client::game::Game<'_>::handle_window_event_inner"
-kind = "HEAD"
-cancellable = true
-helper = "mouse.rs"
-bindings = [
-  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
-  { name = "event", ty = "&winit::event::WindowEvent", value = "&event" }
-]
