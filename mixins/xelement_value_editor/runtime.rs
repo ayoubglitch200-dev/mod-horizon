@@ -35,6 +35,12 @@ pub fn select_previous() {
     });
 }
 
+pub fn select_index(index: usize) {
+    if index < ITEM_COUNT {
+        SELECTED_INDEX.store(index, Ordering::Relaxed);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
