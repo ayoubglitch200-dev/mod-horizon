@@ -1,6 +1,6 @@
 fn draw_overlay(
     game: &mut crate::game::Game<'_>,
-    mut batch: horizon_client::hud::HudBatch,
+    mut batch: HudBatch,
 ) -> HudBatch {
     use crate::game::xelement_value_editor as editor;
 
