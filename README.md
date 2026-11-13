@@ -1,8 +1,8 @@
 # XElement Value Editor
 
-Version: **0.2.0**
+Version: **0.3.0**
 
-Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca.
+Native Horizon mod prototype for Horizon Nightly revision `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`.
 
 ## Controls
 
@@ -10,23 +10,29 @@ Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adc
 - `1`-`4`: select a category on the main page.
 - `ENTER`: open the selected category.
 - `UP` / `DOWN` or `W` / `S`: select a row.
-- `LEFT` / `RIGHT` or `A` / `D`: decrease/increase a supported value.
+- `LEFT` / `RIGHT` or `A` / `D`: decrease/increase or toggle a supported value.
 - `ESC` or `BACKSPACE`: return to the category list; on the main page Escape closes the editor.
 
-## Implemented values
+## Current implementation
 
-- PLAYER: Health, Food and Saturation.
-- MOVEMENT: current local player movement speed.
-- WORLD and ENTITIES & EFFECTS: submenu placeholders; editing is not implemented yet.
+- PLAYER: health, food, saturation, max health, attack damage, attack speed, armor, armor toughness, knockback resistance.
+- MOVEMENT: movement speed.
+- WORLD: day-time counter.
+- ENTITIES & EFFECTS: five potion effects on the local player (Speed, Strength, Jump Boost, Regeneration, Invisibility).
 
-The editor is restricted to a local integrated single-player world. Mouse selection is not implemented in this Horizon revision.
+## Known limitations
+
+- The effects page currently edits the local player's effects; selecting arbitrary mobs/entities is not implemented yet.
+- Weather, difficulty, gamerules and arbitrary world settings are not implemented yet.
+- Some game state is held by Horizon's integrated server. The current prototype has not yet been verified for authoritative server synchronization or persistence.
+- Mouse selection is not implemented in this Horizon revision.
 
 ## Target pins
 
-- Horizon: fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca
-- horizon-mixins: d9c83d7096b7ea5b83678da2efdfd6161f74997e
+- Horizon: `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`
+- horizon-mixins: `d9c83d7096b7ea5b83678da2efdfd6161f74997e`
 - Game: 26.3
 
 ## Build and test
 
-Build this repository with the exact pinned Horizon Nightly revision. The Rust source changes have been reviewed against the pinned Horizon source, but have not been compiled in this environment. Test in a disposable single-player world first.
+Build with the exact pinned Horizon Nightly revision. Source was checked against the pinned API, but this repository change has **not** been compiled in this environment. Test in a disposable single-player world first.
