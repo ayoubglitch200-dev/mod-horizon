@@ -26,6 +26,19 @@ fn toggle_insert(
     let pressed = key;
     let raw_pressed = raw;
 
+    // Number keys select a category directly, without relying on navigation.
+    let direct_selection = match (pressed, raw_pressed) {
+        (KeyCode::Digit1, _) | (_, KeyCode::Digit1) => Some(0),
+        (KeyCode::Digit2, _) | (_, KeyCode::Digit2) => Some(1),
+        (KeyCode::Digit3, _) | (_, KeyCode::Digit3) => Some(2),
+        (KeyCode::Digit4, _) | (_, KeyCode::Digit4) => Some(3),
+        _ => None,
+    };
+    if let Some(index) = direct_selection {
+        editor::select_index(index);
+        return ControlFlow::Break(Ok(()));
+    }
+
     if pressed == KeyCode::ArrowDown || raw_pressed == KeyCode::ArrowDown
         || pressed == KeyCode::KeyS || raw_pressed == KeyCode::KeyS {
         editor::select_next();
