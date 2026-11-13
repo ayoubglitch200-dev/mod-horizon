@@ -13,39 +13,70 @@ fn draw_overlay(
     let muted = horizon_client::hud::rgba(175, 190, 210, 255);
     let accent = horizon_client::hud::rgba(255, 220, 90, 255);
 
-    // Main panel and title.
     batch.fill(atlas, 16.0, 16.0, 326.0, 226.0, 0xE6111724);
     batch.fill(atlas, 16.0, 16.0, 326.0, 26.0, 0xFF263B58);
     batch.text(atlas, "XElement Value Editor", 26.0, 23.0, white, true);
-    batch.text(atlas, "INSERT: close", 230.0, 23.0, muted, true);
 
-    let categories = [
-        ("PLAYER", "health / max health / food"),
-        ("MOVEMENT", "speed / gravity / jump"),
-        ("WORLD", "time / weather / game speed"),
-        ("ENTITIES & EFFECTS", "health / size / duration"),
-    ];
-    let selected = editor::selected_index().min(3);
-
-    for (index, (name, description)) in categories.iter().enumerate() {
-        let y = 50.0 + index as f32 * 39.0;
-        if index == selected {
-            batch.fill(atlas, 24.0, y - 4.0, 310.0, 34.0, 0xFF344B68);
-            batch.fill(atlas, 24.0, y - 4.0, 3.0, 34.0, 0xFFFFDC5A);
+    if editor::current_page() == 0 {
+        batch.text(atlas, "INSERT: close", 230.0, 23.0, muted, true);
+        let categories = [
+            ("PLAYER", "health / food / saturation"),
+            ("MOVEMENT", "movement speed"),
+            ("WORLD", "world values (not implemented yet)"),
+            ("ENTITIES & EFFECTS", "entity values (not implemented yet)"),
+        ];
+        let selected = editor::selected_index().min(3);
+        for (index, (name, description)) in categories.iter().enumerate() {
+            let y = 50.0 + index as f32 * 39.0;
+            if index == selected {
+                batch.fill(atlas, 24.0, y - 4.0, 310.0, 34.0, 0xFF344B68);
+                batch.fill(atlas, 24.0, y - 4.0, 3.0, 34.0, 0xFFFFDC5A);
+            }
+            let number = match index { 0 => "[1]", 1 => "[2]", 2 => "[3]", _ => "[4]" };
+            batch.text(atlas, number, 34.0, y, accent, true);
+            batch.text(atlas, name, 70.0, y, white, true);
+            batch.text(atlas, description, 70.0, y + 14.0, muted, true);
         }
-        let number = match index {
-            0 => "[1]",
-            1 => "[2]",
-            2 => "[3]",
-            _ => "[4]",
-        };
-        batch.text(atlas, number, 34.0, y, accent, true);
-        batch.text(atlas, name, 70.0, y, white, true);
-        batch.text(atlas, description, 70.0, y + 14.0, muted, true);
+        batch.fill(atlas, 24.0, 213.0, 310.0, 1.0, 0xFF52647A);
+        batch.text(atlas, "ENTER: open category   1-4: select", 27.0, 220.0, white, true);
+        return batch;
     }
 
-    batch.fill(atlas, 24.0, 213.0, 310.0, 1.0, 0xFF52647A);
-    batch.text(atlas, "1-4: select category   UP/DOWN: move", 27.0, 220.0, white, true);
+    batch.text(atlas, "ESC: back", 260.0, 23.0, muted, true);
+    let page = editor::current_page();
+    let selected = editor::item_index();
+
+    if page == 1 {
+        batch.text(atlas, "PLAYER", 26.0, 49.0, accent, true);
+        let values = editor::player_values(game);
+        let rows = [
+            ("Health", values[0].as_str()),
+            ("Food", values[1].as_str()),
+            ("Saturation", values[2].as_str()),
+        ];
+        for (i, (name, value)) in rows.iter().enumerate() {
+            let y = 83.0 + i as f32 * 36.0;
+            if i == selected {
+                batch.fill(atlas, 24.0, y - 5.0, 310.0, 30.0, 0xFF344B68);
+                batch.fill(atlas, 24.0, y - 5.0, 3.0, 30.0, 0xFFFFDC5A);
+            }
+            batch.text(atlas, name, 38.0, y, white, true);
+            batch.text(atlas, value, 260.0, y, accent, true);
+        }
+        batch.text(atlas, "LEFT/RIGHT: change selected value", 27.0, 220.0, white, true);
+    } else if page == 2 {
+        batch.text(atlas, "MOVEMENT", 26.0, 49.0, accent, true);
+        batch.fill(atlas, 24.0, 78.0, 310.0, 30.0, 0xFF344B68);
+        batch.text(atlas, "Movement speed", 38.0, 87.0, white, true);
+        let value = editor::movement_value(game);
+        batch.text(atlas, &value, 260.0, 87.0, accent, true);
+        batch.text(atlas, "LEFT/RIGHT: change speed", 27.0, 220.0, white, true);
+    } else {
+        let label = if page == 3 { "WORLD" } else { "ENTITIES & EFFECTS" };
+        batch.text(atlas, label, 26.0, 49.0, accent, true);
+        batch.text(atlas, "This category is not implemented yet.", 30.0, 95.0, white, true);
+        batch.text(atlas, "Press ESC to return.", 30.0, 116.0, muted, true);
+    }
 
     batch
 }
