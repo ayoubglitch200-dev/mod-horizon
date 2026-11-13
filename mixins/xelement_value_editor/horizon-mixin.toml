@@ -1,6 +1,6 @@
 [mod]
 id = "xelement_value_editor"
-version = "0.3.0"
+version = "0.3.1"
 priority = 100
 
 [compatibility]
