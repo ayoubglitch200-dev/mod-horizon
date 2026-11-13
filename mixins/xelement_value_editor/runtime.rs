@@ -55,179 +55,50 @@ fn parse_numeric_input(input: &str) -> Option<f64> {
         value => value.parse::<f64>().ok(),
     }
 }
-fn set_attribute_value(game: &mut crate::game::Game<'_>, id: &str, value: f64) -> bool {
-    use horizon_world::attribute_map::ValueKind;
-    let Some(player) = game.player.as_mut() else { return false; };
-    let Some(key) = player.attributes.key(id) else { return false; };
-    let Ok(Some(handle)) = player.attributes.get_instance(Some(key)) else { return false; };
-    player.attributes.edit(&handle, |attribute, observer| attribute.set_base_value(value, observer)).is_ok()
-}
+
 pub fn commit_edit(game: &mut crate::game::Game<'_>) -> Result<(), String> {
     let input = edit_buffer();
-    let value = parse_numeric_input(&input).ok_or_else(|| "Enter a number, NaN, Infinity or -Infinity".to_string())?;
+    let value = parse_numeric_input(&input)
+        .ok_or_else(|| "Enter a number, NaN, Infinity or -Infinity".to_string())?;
     let page = current_page();
     let index = item_index();
-    let ok = match page {
+
+    // Apply edits on the integrated server thread. Editing only the client copy
+    // is overwritten by the authoritative single-player server on the next tick.
+    let command = match page {
         1 => match index {
-            0 => {
-                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
-                player.set_health(value as f32, false).is_ok()
-            }
+            0 => format!("data modify entity @s Health set value {}f", input.trim()),
             1 => {
                 if !value.is_finite() { return Err("Food requires a finite integer".into()); }
-                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
-                player.health.food.food = (value.round() as i32).clamp(0, 20);
-                true
+                format!("data modify entity @s foodLevel set value {}", value.round() as i32)
             }
-            2 => {
-                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
-                player.health.food.saturation = value as f32;
-                true
-            }
-            3 => set_attribute_value(game, "minecraft:max_health", value),
-            4 => set_attribute_value(game, "minecraft:attack_damage", value),
-            5 => set_attribute_value(game, "minecraft:attack_speed", value),
-            6 => set_attribute_value(game, "minecraft:armor", value),
-            7 => set_attribute_value(game, "minecraft:armor_toughness", value),
-            8 => set_attribute_value(game, "minecraft:knockback_resistance", value),
-            _ => false,
+            2 => format!("data modify entity @s foodSaturationLevel set value {}f", input.trim()),
+            3 => format!("attribute @s minecraft:max_health base set {}", input.trim()),
+            4 => format!("attribute @s minecraft:attack_damage base set {}", input.trim()),
+            5 => format!("attribute @s minecraft:attack_speed base set {}", input.trim()),
+            6 => format!("attribute @s minecraft:armor base set {}", input.trim()),
+            7 => format!("attribute @s minecraft:armor_toughness base set {}", input.trim()),
+            8 => format!("attribute @s minecraft:knockback_resistance base set {}", input.trim()),
+            _ => return Err("This value cannot be edited".into()),
         },
-        2 => set_attribute_value(game, "minecraft:movement_speed", value),
+        2 => format!("attribute @s minecraft:movement_speed base set {}", input.trim()),
         3 => {
             if !value.is_finite() { return Err("World time requires a finite integer".into()); }
-            game.world.day_time = value as i64;
-            true
+            format!("time set {}", value as i64)
         }
-        _ => false,
+        _ => return Err("This value cannot be edited".into()),
     };
-    if !ok { return Err("The game rejected this value".into()); }
+
+    let Some(server) = game.integrated.as_ref() else {
+        return Err("The integrated single-player server is unavailable".into());
+    };
+    if !server.post(move |server_game| {
+        let _ = server_game.run_command_quietly(&command);
+    }) {
+        return Err("Could not send the edit to the integrated server".into());
+    }
     cancel_edit();
     Ok(())
-}
-
-pub fn current_page() -> usize { CURRENT_PAGE.load(Ordering::Relaxed) }
-pub fn item_index() -> usize { ITEM_INDEX.load(Ordering::Relaxed) }
-
-pub fn select_next() {
-    if current_page() == 0 {
-        let _ = SELECTED_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |i| Some((i + 1) % CATEGORY_COUNT));
-    } else {
-        let count = page_item_count(current_page());
-        let _ = ITEM_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |i| Some((i + 1) % count));
-    }
-}
-pub fn select_previous() {
-    if current_page() == 0 {
-        let _ = SELECTED_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |i| Some((i + CATEGORY_COUNT - 1) % CATEGORY_COUNT));
-    } else {
-        let count = page_item_count(current_page());
-        let _ = ITEM_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |i| Some((i + count - 1) % count));
-    }
-}
-pub fn select_index(index: usize) {
-    if current_page() == 0 && index < CATEGORY_COUNT { SELECTED_INDEX.store(index, Ordering::Relaxed); }
-}
-pub fn enter_category() {
-    if current_page() == 0 {
-        CURRENT_PAGE.store(selected_index() + 1, Ordering::Relaxed);
-        ITEM_INDEX.store(0, Ordering::Relaxed);
-    }
-}
-pub fn back_to_categories() {
-    let page = current_page();
-    if page != 0 {
-        CURRENT_PAGE.store(0, Ordering::Relaxed);
-        SELECTED_INDEX.store(page.saturating_sub(1).min(3), Ordering::Relaxed);
-        ITEM_INDEX.store(0, Ordering::Relaxed);
-    }
-}
-
-
-fn page_item_count(page: usize) -> usize {
-    match page {
-        1 => PLAYER_ITEM_COUNT,
-        2 => 1,
-        3 => 2,
-        4 => EFFECT_IDS.len(),
-        _ => 1,
-    }
-}
-
-fn change_attribute(game: &mut crate::game::Game<'_>, id: &str, direction: f64, min: f64, max: f64) -> bool {
-    use horizon_world::attribute_map::ValueKind;
-    let Some(player) = game.player.as_mut() else { return false; };
-    let Some(key) = player.attributes.key(id) else { return false; };
-    let Ok(base) = player.attributes.value(Some(key.clone()), ValueKind::Base) else { return false; };
-    let Ok(Some(handle)) = player.attributes.get_instance(Some(key.clone())) else { return false; };
-    let next = (base + direction).clamp(min, max);
-    if player.attributes.edit(&handle, |value, observer| value.set_base_value(next, observer)).is_err() {
-        return false;
-    }
-    if id == "minecraft:max_health" { let _ = player.clamp_health_to_max(); }
-    if id == "minecraft:movement_speed" { player.speed = next as f32; }
-    true
-}
-
-fn effect_is_active(game: &crate::game::Game<'_>, index: usize) -> bool {
-    let Some(id) = EFFECT_IDS.get(index) else { return false; };
-    let short = id.strip_prefix("minecraft:").unwrap_or(id);
-    game.potions.effects.get(short).is_some()
-}
-
-fn toggle_effect(game: &mut crate::game::Game<'_>, index: usize) -> bool {
-    let Some(id) = EFFECT_IDS.get(index) else { return false; };
-    let Some(def) = horizon_client::brewing::effect(id) else { return false; };
-    if effect_is_active(game, index) {
-        let effect_id = def.id;
-        game.potions.effects.list.retain(|e| e.id != effect_id);
-        game.apply_effect_status();
-        true
-    } else {
-        let mut effect = horizon_client::effects::EffectInstance::new(def.id, 20 * 60 * 5, 0);
-        effect.visible = true;
-        game.add_player_effect(effect)
-    }
-}
-
-/// Change a supported local-player value. Returns false when that value is not
-/// implemented or the local player is unavailable.
-pub fn adjust_value(game: &mut crate::game::Game<'_>, direction: f32) -> bool {
-    match current_page() {
-        1 => {
-            match item_index() {
-                0 => {
-                    let Some(player) = game.player.as_mut() else { return false; };
-                    let value = (player.health.health() + direction).max(0.0);
-                    player.set_health(value, false).is_ok()
-                }
-                1 => {
-                    let Some(player) = game.player.as_mut() else { return false; };
-                    player.health.food.food = (player.health.food.food + direction as i32).clamp(0, 20);
-                    true
-                }
-                2 => {
-                    let Some(player) = game.player.as_mut() else { return false; };
-                    let food = player.health.food.food as f32;
-                    player.health.food.saturation = (player.health.food.saturation + direction).clamp(0.0, food);
-                    true
-                }
-                3 => change_attribute(game, "minecraft:max_health", f64::from(direction), 1.0, 2048.0),
-                4 => change_attribute(game, "minecraft:attack_damage", f64::from(direction), 0.0, 2048.0),
-                5 => change_attribute(game, "minecraft:attack_speed", f64::from(direction) * 0.1, 0.1, 1024.0),
-                6 => change_attribute(game, "minecraft:armor", f64::from(direction), 0.0, 30.0),
-                7 => change_attribute(game, "minecraft:armor_toughness", f64::from(direction), 0.0, 20.0),
-                8 => change_attribute(game, "minecraft:knockback_resistance", f64::from(direction) * 0.05, 0.0, 1.0),
-                _ => false,
-            }
-        }
-        2 => change_attribute(game, "minecraft:movement_speed", f64::from(direction) * 0.01, 0.001, 1.0),
-        3 => {
-            game.world.day_time = (game.world.day_time + (direction as i64 * 1000)).max(0);
-            true
-        }
-        4 => toggle_effect(game, item_index()),
-        _ => false,
-    }
 }
 
 pub fn player_values(game: &mut crate::game::Game<'_>) -> [String; 9] {
