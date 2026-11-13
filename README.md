@@ -1,6 +1,6 @@
 # XElement Value Editor
 
-Version: **0.1.1**
+Version: **0.1.2**
 
 Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca (short: fdc87ae).
 
@@ -9,7 +9,7 @@ Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adc
 - Press Insert in a local single-player world to show or hide the overlay.
 - The overlay is drawn into the game's HUD.
 - The solo check uses Horizon's integrated server field. A single-player client also has a remote connection to its integrated server, so checking remote.is_some() incorrectly disables the mod.
-- Use the arrow keys or W/S to select a category; mouse selection is not supported by this Horizon revision yet.
+- Select categories directly with keys 1-4, or navigate with Up/Down or W/S. The selected row is highlighted.
 - The overlay currently lists planned editor categories; it does not yet write gameplay values.
 
 ## Target pins
@@ -21,6 +21,15 @@ Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adc
 ## Important compatibility note
 
 The launcher may leave this mod out if the native build is being made for a different Horizon commit (for example, another enabled native mod pins a newer commit). The build log then says it was left out because it was made for another Horizon version. Temporarily disable/remove other native mods and rebuild the instance on Nightly fdc87ae to isolate this pin.
+
+## Controls
+
+- `INSERT`: open/close the editor.
+- `1` to `4`: select a category directly.
+- `Up` / `Down` or `W` / `S`: move the selection.
+- `Escape`: close the editor.
+
+Mouse category selection is not implemented in this Horizon revision.
 
 ## Build and test
 
