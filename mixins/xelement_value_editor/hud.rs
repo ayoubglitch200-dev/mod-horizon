@@ -58,6 +58,13 @@ fn draw_overlay(
 
     batch.text(atlas, "ESC: back", 260.0, 23.0, muted, true);
     let selected = editor::item_index();
+    if editor::is_editing() {
+        batch.fill(atlas, 24.0, 210.0, 310.0, 32.0, 0xFF263B58);
+        batch.text(atlas, "EDIT VALUE (ENTER: save / ESC: cancel)", 30.0, 216.0, accent, true);
+        let buffer = editor::edit_buffer();
+        batch.text(atlas, &buffer, 30.0, 230.0, white, true);
+        return batch;
+    }
 
     if page == 1 {
         batch.text(atlas, "PLAYER", 26.0, 49.0, accent, true);
@@ -82,21 +89,21 @@ fn draw_overlay(
             batch.text(atlas, name, 38.0, y, white, true);
             batch.text(atlas, value, 260.0, y, accent, true);
         }
-        batch.text(atlas, "LEFT/RIGHT: adjust selected value", 27.0, 254.0, white, true);
+        batch.text(atlas, "ENTER: edit value   LEFT/RIGHT: quick adjust selected value", 27.0, 254.0, white, true);
     } else if page == 2 {
         batch.text(atlas, "MOVEMENT", 26.0, 49.0, accent, true);
         batch.fill(atlas, 24.0, 78.0, 310.0, 30.0, 0xFF344B68);
         batch.text(atlas, "Movement Speed", 38.0, 87.0, white, true);
         let value = movement_value.as_ref().expect("MOVEMENT value prepared before atlas borrow");
         batch.text(atlas, &value, 260.0, 87.0, accent, true);
-        batch.text(atlas, "LEFT/RIGHT: adjust speed", 27.0, 254.0, white, true);
+        batch.text(atlas, "ENTER: edit speed", 27.0, 254.0, white, true);
     } else if page == 3 {
         batch.text(atlas, "WORLD", 26.0, 49.0, accent, true);
         let time = editor::world_time(game);
         batch.fill(atlas, 24.0, 78.0, 310.0, 30.0, 0xFF344B68);
         batch.text(atlas, "Time of day (ticks)", 38.0, 87.0, white, true);
         batch.text(atlas, &time, 260.0, 87.0, accent, true);
-        batch.text(atlas, "LEFT/RIGHT: -/+ 1000 ticks", 27.0, 254.0, white, true);
+        batch.text(atlas, "ENTER: edit time", 27.0, 254.0, white, true);
     } else if page == 4 {
         batch.text(atlas, "PLAYER EFFECTS", 26.0, 49.0, accent, true);
         let rows = editor::effect_rows(game);
