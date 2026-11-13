@@ -8,6 +8,20 @@ fn draw_overlay(
         return batch;
     }
 
+    // Read mutable player attributes before borrowing the GUI atlas.
+    // The atlas borrow below is immutable and remains active while drawing.
+    let page = editor::current_page();
+    let player_values = if page == 1 {
+        Some(editor::player_values(game))
+    } else {
+        None
+    };
+    let movement_value = if page == 2 {
+        Some(editor::movement_value(game))
+    } else {
+        None
+    };
+
     let atlas = &game.gui.atlas;
     let white = horizon_client::hud::rgba(245, 248, 255, 255);
     let muted = horizon_client::hud::rgba(175, 190, 210, 255);
@@ -43,12 +57,11 @@ fn draw_overlay(
     }
 
     batch.text(atlas, "ESC: back", 260.0, 23.0, muted, true);
-    let page = editor::current_page();
     let selected = editor::item_index();
 
     if page == 1 {
         batch.text(atlas, "PLAYER", 26.0, 49.0, accent, true);
-        let values = editor::player_values(game);
+        let values = player_values.as_ref().expect("PLAYER values prepared before atlas borrow");
         let rows = [
             ("Health", values[0].as_str()),
             ("Food", values[1].as_str()),
@@ -74,7 +87,7 @@ fn draw_overlay(
         batch.text(atlas, "MOVEMENT", 26.0, 49.0, accent, true);
         batch.fill(atlas, 24.0, 78.0, 310.0, 30.0, 0xFF344B68);
         batch.text(atlas, "Movement Speed", 38.0, 87.0, white, true);
-        let value = editor::movement_value(game);
+        let value = movement_value.as_ref().expect("MOVEMENT value prepared before atlas borrow");
         batch.text(atlas, &value, 260.0, 87.0, accent, true);
         batch.text(atlas, "LEFT/RIGHT: adjust speed", 27.0, 254.0, white, true);
     } else if page == 3 {
