@@ -67,21 +67,21 @@ pub fn commit_edit(game: &mut crate::game::Game<'_>) -> Result<(), String> {
     // is overwritten by the authoritative single-player server on the next tick.
     let command = match page {
         1 => match index {
-            0 => format!("data modify entity @s Health set value {}f", input.trim()),
+            0 => format!("data modify entity @a[limit=1] Health set value {}f", input.trim()),
             1 => {
                 if !value.is_finite() { return Err("Food requires a finite integer".into()); }
-                format!("data modify entity @s foodLevel set value {}", value.round() as i32)
+                format!("data modify entity @a[limit=1] foodLevel set value {}", value.round() as i32)
             }
-            2 => format!("data modify entity @s foodSaturationLevel set value {}f", input.trim()),
-            3 => format!("attribute @s minecraft:max_health base set {}", input.trim()),
-            4 => format!("attribute @s minecraft:attack_damage base set {}", input.trim()),
-            5 => format!("attribute @s minecraft:attack_speed base set {}", input.trim()),
-            6 => format!("attribute @s minecraft:armor base set {}", input.trim()),
-            7 => format!("attribute @s minecraft:armor_toughness base set {}", input.trim()),
-            8 => format!("attribute @s minecraft:knockback_resistance base set {}", input.trim()),
+            2 => format!("data modify entity @a[limit=1] foodSaturationLevel set value {}f", input.trim()),
+            3 => format!("attribute @a[limit=1] minecraft:max_health base set {}", input.trim()),
+            4 => format!("attribute @a[limit=1] minecraft:attack_damage base set {}", input.trim()),
+            5 => format!("attribute @a[limit=1] minecraft:attack_speed base set {}", input.trim()),
+            6 => format!("attribute @a[limit=1] minecraft:armor base set {}", input.trim()),
+            7 => format!("attribute @a[limit=1] minecraft:armor_toughness base set {}", input.trim()),
+            8 => format!("attribute @a[limit=1] minecraft:knockback_resistance base set {}", input.trim()),
             _ => return Err("This value cannot be edited".into()),
         },
-        2 => format!("attribute @s minecraft:movement_speed base set {}", input.trim()),
+        2 => format!("attribute @a[limit=1] minecraft:movement_speed base set {}", input.trim()),
         3 => {
             if !value.is_finite() { return Err("World time requires a finite integer".into()); }
             format!("time set {}", value as i64)
@@ -92,10 +92,10 @@ pub fn commit_edit(game: &mut crate::game::Game<'_>) -> Result<(), String> {
     let Some(server) = game.integrated.as_ref() else {
         return Err("The integrated single-player server is unavailable".into());
     };
-    if !server.post(move |server_game| {
-        let _ = server_game.run_command_quietly(&command);
-    }) {
-        return Err("Could not send the edit to the integrated server".into());
+    match server.call(move |server_game| server_game.run_command_quietly(&command)) {
+        Some(true) => {}
+        Some(false) => return Err("Horizon rejected this value or could not find the player".into()),
+        None => return Err("The integrated server did not answer".into()),
     }
     cancel_edit();
     Ok(())
