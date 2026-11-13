@@ -46,9 +46,10 @@ pub fn enter_category() {
     }
 }
 pub fn back_to_categories() {
-    if current_page() != 0 {
+    let page = current_page();
+    if page != 0 {
         CURRENT_PAGE.store(0, Ordering::Relaxed);
-        SELECTED_INDEX.store(current_page().saturating_sub(1).min(3), Ordering::Relaxed);
+        SELECTED_INDEX.store(page.saturating_sub(1).min(3), Ordering::Relaxed);
         ITEM_INDEX.store(0, Ordering::Relaxed);
     }
 }
