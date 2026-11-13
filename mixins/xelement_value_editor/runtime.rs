@@ -4,6 +4,8 @@ static MENU_OPEN: AtomicBool = AtomicBool::new(false);
 static SELECTED_INDEX: AtomicUsize = AtomicUsize::new(0);
 static CURRENT_PAGE: AtomicUsize = AtomicUsize::new(0);
 static ITEM_INDEX: AtomicUsize = AtomicUsize::new(0);
+static EDITING: AtomicBool = AtomicBool::new(false);
+static EDIT_BUFFER: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 const CATEGORY_COUNT: usize = 4;
 const PLAYER_ITEM_COUNT: usize = 9;
 const EFFECT_IDS: [&str; 5] = ["minecraft:speed", "minecraft:strength", "minecraft:jump_boost", "minecraft:regeneration", "minecraft:invisibility"];
@@ -19,6 +21,90 @@ pub fn toggle_menu() {
 pub fn close_menu() { MENU_OPEN.store(false, Ordering::Relaxed); }
 pub fn menu_is_open() -> bool { MENU_OPEN.load(Ordering::Relaxed) }
 pub fn selected_index() -> usize { SELECTED_INDEX.load(Ordering::Relaxed).min(CATEGORY_COUNT - 1) }
+
+pub fn is_editing() -> bool { EDITING.load(Ordering::Relaxed) }
+pub fn edit_buffer() -> String {
+    EDIT_BUFFER.lock().map(|s| s.clone()).unwrap_or_default()
+}
+pub fn begin_edit() -> bool {
+    if !matches!(current_page(), 1 | 2 | 3) || (current_page() == 3 && item_index() >= 1) {
+        return false;
+    }
+    if let Ok(mut buffer) = EDIT_BUFFER.lock() { buffer.clear(); }
+    EDITING.store(true, Ordering::Relaxed);
+    true
+}
+pub fn cancel_edit() {
+    EDITING.store(false, Ordering::Relaxed);
+    if let Ok(mut buffer) = EDIT_BUFFER.lock() { buffer.clear(); }
+}
+pub fn append_edit_char(ch: char) {
+    if !is_editing() { return; }
+    if let Ok(mut buffer) = EDIT_BUFFER.lock() {
+        if buffer.len() < 32 { buffer.push(ch); }
+    }
+}
+pub fn edit_backspace() {
+    if let Ok(mut buffer) = EDIT_BUFFER.lock() { buffer.pop(); }
+}
+fn parse_numeric_input(input: &str) -> Option<f64> {
+    match input.trim().to_ascii_lowercase().as_str() {
+        "nan" | "+nan" | "-nan" => Some(f64::NAN),
+        "inf" | "+inf" | "infinity" | "+infinity" => Some(f64::INFINITY),
+        "-inf" | "-infinity" => Some(f64::NEG_INFINITY),
+        value => value.parse::<f64>().ok(),
+    }
+}
+fn set_attribute_value(game: &mut crate::game::Game<'_>, id: &str, value: f64) -> bool {
+    use horizon_world::attribute_map::ValueKind;
+    let Some(player) = game.player.as_mut() else { return false; };
+    let Some(key) = player.attributes.key(id) else { return false; };
+    let Ok(Some(handle)) = player.attributes.get_instance(Some(key)) else { return false; };
+    player.attributes.edit(&handle, |attribute, observer| attribute.set_base_value(value, observer)).is_ok()
+}
+pub fn commit_edit(game: &mut crate::game::Game<'_>) -> Result<(), String> {
+    let input = edit_buffer();
+    let value = parse_numeric_input(&input).ok_or_else(|| "Enter a number, NaN, Infinity or -Infinity".to_string())?;
+    let page = current_page();
+    let index = item_index();
+    let ok = match page {
+        1 => match index {
+            0 => {
+                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
+                player.set_health(value as f32, false).is_ok()
+            }
+            1 => {
+                if !value.is_finite() { return Err("Food requires a finite integer".into()); }
+                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
+                player.health.food.food = (value.round() as i32).clamp(0, 20);
+                true
+            }
+            2 => {
+                let Some(player) = game.player.as_mut() else { return Err("Player unavailable".into()); };
+                player.health.food.saturation = value as f32;
+                true
+            }
+            3 => set_attribute_value(game, "minecraft:max_health", value),
+            4 => set_attribute_value(game, "minecraft:attack_damage", value),
+            5 => set_attribute_value(game, "minecraft:attack_speed", value),
+            6 => set_attribute_value(game, "minecraft:armor", value),
+            7 => set_attribute_value(game, "minecraft:armor_toughness", value),
+            8 => set_attribute_value(game, "minecraft:knockback_resistance", value),
+            _ => false,
+        },
+        2 => set_attribute_value(game, "minecraft:movement_speed", value),
+        3 => {
+            if !value.is_finite() { return Err("World time requires a finite integer".into()); }
+            game.world.day_time = value as i64;
+            true
+        }
+        _ => false,
+    };
+    if !ok { return Err("The game rejected this value".into()); }
+    cancel_edit();
+    Ok(())
+}
+
 pub fn current_page() -> usize { CURRENT_PAGE.load(Ordering::Relaxed) }
 pub fn item_index() -> usize { ITEM_INDEX.load(Ordering::Relaxed) }
 
