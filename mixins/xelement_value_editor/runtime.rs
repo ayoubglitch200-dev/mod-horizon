@@ -108,17 +108,19 @@ fn toggle_effect(game: &mut crate::game::Game<'_>, index: usize) -> bool {
 pub fn adjust_value(game: &mut crate::game::Game<'_>, direction: f32) -> bool {
     match current_page() {
         1 => {
-            let Some(player) = game.player.as_mut() else { return false; };
             match item_index() {
                 0 => {
+                    let Some(player) = game.player.as_mut() else { return false; };
                     let value = (player.health.health() + direction).max(0.0);
                     player.set_health(value, false).is_ok()
                 }
                 1 => {
+                    let Some(player) = game.player.as_mut() else { return false; };
                     player.health.food.food = (player.health.food.food + direction as i32).clamp(0, 20);
                     true
                 }
                 2 => {
+                    let Some(player) = game.player.as_mut() else { return false; };
                     let food = player.health.food.food as f32;
                     player.health.food.saturation = (player.health.food.saturation + direction).clamp(0.0, food);
                     true
