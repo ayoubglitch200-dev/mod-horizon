@@ -1,16 +1,25 @@
 # XElement Value Editor
 
-Version: **0.1.2**
+Version: **0.2.0**
 
-Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca (short: fdc87ae).
+Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca.
 
-## Current prototype
+## Controls
 
-- Press Insert in a local single-player world to show or hide the overlay.
-- The overlay is drawn into the game's HUD.
-- The solo check uses Horizon's integrated server field. A single-player client also has a remote connection to its integrated server, so checking remote.is_some() incorrectly disables the mod.
-- Select categories directly with keys 1-4, or navigate with Up/Down or W/S. The selected row is highlighted.
-- The overlay currently lists planned editor categories; it does not yet write gameplay values.
+- `INSERT`: open/close the editor.
+- `1`-`4`: select a category on the main page.
+- `ENTER`: open the selected category.
+- `UP` / `DOWN` or `W` / `S`: select a row.
+- `LEFT` / `RIGHT` or `A` / `D`: decrease/increase a supported value.
+- `ESC` or `BACKSPACE`: return to the category list; on the main page Escape closes the editor.
+
+## Implemented values
+
+- PLAYER: Health, Food and Saturation.
+- MOVEMENT: current local player movement speed.
+- WORLD and ENTITIES & EFFECTS: submenu placeholders; editing is not implemented yet.
+
+The editor is restricted to a local integrated single-player world. Mouse selection is not implemented in this Horizon revision.
 
 ## Target pins
 
@@ -18,21 +27,6 @@ Native Horizon mod prototype for Nightly source revision fdc87aecdbd116bf1e08adc
 - horizon-mixins: d9c83d7096b7ea5b83678da2efdfd6161f74997e
 - Game: 26.3
 
-## Important compatibility note
-
-The launcher may leave this mod out if the native build is being made for a different Horizon commit (for example, another enabled native mod pins a newer commit). The build log then says it was left out because it was made for another Horizon version. Temporarily disable/remove other native mods and rebuild the instance on Nightly fdc87ae to isolate this pin.
-
-## Controls
-
-- `INSERT`: open/close the editor.
-- `1` to `4`: select a category directly.
-- `Up` / `Down` or `W` / `S`: move the selection.
-- `Escape`: close the editor.
-
-Mouse category selection is not implemented in this Horizon revision.
-
 ## Build and test
 
-Install this repository from the Horizon Mods page using its exact commit. Then run the native build for the Nightly above. Check the launcher build log for any left-out diagnostic.
-
-This is native code compiled into a custom Horizon client, not a Java/Fabric mod. Native mods run with the user's account permissions. Review the source before trusting/building it. This prototype intentionally does not alter saves or send commands to servers.
+Build this repository with the exact pinned Horizon Nightly revision. The Rust source changes have been reviewed against the pinned Horizon source, but have not been compiled in this environment. Test in a disposable single-player world first.
