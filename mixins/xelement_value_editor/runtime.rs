@@ -144,21 +144,24 @@ pub fn adjust_value(game: &mut crate::game::Game<'_>, direction: f32) -> bool {
     }
 }
 
-pub fn player_values(game: &crate::game::Game<'_>) -> [String; 9] {
+pub fn player_values(game: &mut crate::game::Game<'_>) -> [String; 9] {
     use horizon_world::attribute_map::ValueKind;
-    let Some(p) = game.player.as_ref() else {
+    let Some(p) = game.player.as_mut() else {
         return std::array::from_fn(|_| "N/A".into());
     };
-    let attribute = |id: &str| -> String {
-        p.attributes.key(id)
-            .and_then(|key| p.attributes.value(Some(key), ValueKind::Base).ok())
+    let health = format!("{:.1}", p.health.health());
+    let food = format!("{}", p.health.food.food);
+    let saturation = format!("{:.1}", p.health.food.saturation);
+    let mut attribute = |id: &str| -> String {
+        let Some(key) = p.attributes.key(id) else { return "N/A".into(); };
+        p.attributes.value(Some(key), ValueKind::Base)
             .map(|v| format!("{v:.2}"))
-            .unwrap_or_else(|| "N/A".into())
+            .unwrap_or_else(|_| "N/A".into())
     };
     [
-        format!("{:.1}", p.health.health()),
-        format!("{}", p.health.food.food),
-        format!("{:.1}", p.health.food.saturation),
+        health,
+        food,
+        saturation,
         attribute("minecraft:max_health"),
         attribute("minecraft:attack_damage"),
         attribute("minecraft:attack_speed"),
@@ -180,9 +183,9 @@ pub fn effect_rows(game: &crate::game::Game<'_>) -> [(String, bool); 5] {
     ]
 }
 
-pub fn movement_value(game: &crate::game::Game<'_>) -> String {
+pub fn movement_value(game: &mut crate::game::Game<'_>) -> String {
     use horizon_world::attribute_map::ValueKind;
-    let Some(player) = game.player.as_ref() else { return "N/A".into(); };
+    let Some(player) = game.player.as_mut() else { return "N/A".into(); };
     let Some(key) = player.attributes.key("minecraft:movement_speed") else { return "N/A".into(); };
     player.attributes.value(Some(key), ValueKind::Computed)
         .map(|value| format!("{:.4}", value))
