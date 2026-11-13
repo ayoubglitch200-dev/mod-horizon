@@ -1,6 +1,6 @@
 # XElement Value Editor
 
-Version: **0.3.1**
+Version: **0.3.2**
 
 Native Horizon mod prototype for Horizon Nightly revision `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`.
 
