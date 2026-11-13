@@ -77,8 +77,17 @@ pub fn adjust_value(game: &mut crate::game::Game<'_>, direction: f32) -> bool {
             }
         }
         2 => {
+            use horizon_world::attribute_map::ValueKind;
             let Some(player) = game.player.as_mut() else { return false; };
-            player.speed = (player.speed + direction * 0.01).clamp(0.01, 10.0);
+            let Some(key) = player.attributes.key("minecraft:movement_speed") else { return false; };
+            let Ok(base) = player.attributes.value(Some(key.clone()), ValueKind::Base) else { return false; };
+            let Some(handle) = player.attributes.get_instance(Some(key.clone())).ok().flatten() else { return false; };
+            let new_base = (base + f64::from(direction) * 0.01).clamp(0.001, 1.0);
+            if player.attributes.edit(&handle, |value, observer| value.set_base_value(new_base, observer)).is_err() {
+                return false;
+            }
+            let Ok(computed) = player.attributes.value(Some(key), ValueKind::Computed) else { return false; };
+            player.speed = computed as f32;
             true
         }
         _ => false,
@@ -96,7 +105,12 @@ pub fn player_values(game: &crate::game::Game<'_>) -> [String; 3] {
     }
 }
 pub fn movement_value(game: &crate::game::Game<'_>) -> String {
-    game.player.as_ref().map(|p| format!("{:.3}", p.speed)).unwrap_or_else(|| "N/A".into())
+    use horizon_world::attribute_map::ValueKind;
+    let Some(player) = game.player.as_ref() else { return "N/A".into(); };
+    let Some(key) = player.attributes.key("minecraft:movement_speed") else { return "N/A".into(); };
+    player.attributes.value(Some(key), ValueKind::Computed)
+        .map(|value| format!("{:.4}", value))
+        .unwrap_or_else(|_| "N/A".into())
 }
 
 #[cfg(test)]
