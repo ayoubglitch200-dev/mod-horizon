@@ -22,6 +22,39 @@ pub fn close_menu() { MENU_OPEN.store(false, Ordering::Relaxed); }
 pub fn menu_is_open() -> bool { MENU_OPEN.load(Ordering::Relaxed) }
 pub fn selected_index() -> usize { SELECTED_INDEX.load(Ordering::Relaxed).min(CATEGORY_COUNT - 1) }
 
+pub fn current_page() -> usize { CURRENT_PAGE.load(Ordering::Relaxed) }
+pub fn item_index() -> usize { ITEM_INDEX.load(Ordering::Relaxed) }
+pub fn select_index(index: usize) {
+    SELECTED_INDEX.store(index.min(CATEGORY_COUNT - 1), Ordering::Relaxed);
+}
+pub fn select_next() {
+    if current_page() == 0 {
+        SELECTED_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| Some((v + 1) % CATEGORY_COUNT)).ok();
+    } else {
+        let count = match current_page() { 1 => PLAYER_ITEM_COUNT, 2 | 3 => 1, 4 => EFFECT_IDS.len(), _ => 1 };
+        ITEM_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| Some((v + 1) % count)).ok();
+    }
+}
+pub fn select_previous() {
+    if current_page() == 0 {
+        SELECTED_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| Some((v + CATEGORY_COUNT - 1) % CATEGORY_COUNT)).ok();
+    } else {
+        let count = match current_page() { 1 => PLAYER_ITEM_COUNT, 2 | 3 => 1, 4 => EFFECT_IDS.len(), _ => 1 };
+        ITEM_INDEX.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| Some((v + count - 1) % count)).ok();
+    }
+}
+pub fn enter_category() {
+    CURRENT_PAGE.store(selected_index() + 1, Ordering::Relaxed);
+    ITEM_INDEX.store(0, Ordering::Relaxed);
+}
+pub fn back_to_categories() {
+    if is_editing() { cancel_edit(); }
+    CURRENT_PAGE.store(0, Ordering::Relaxed);
+    SELECTED_INDEX.store(0, Ordering::Relaxed);
+}
+fn effect_is_active(_game: &crate::game::Game<'_>, _index: usize) -> bool { false }
+pub fn adjust_value(_game: &mut crate::game::Game<'_>, _delta: f64) -> bool { false }
+
 pub fn is_editing() -> bool { EDITING.load(Ordering::Relaxed) }
 pub fn edit_buffer() -> String {
     EDIT_BUFFER.lock().map(|s| s.clone()).unwrap_or_default()
